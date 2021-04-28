@@ -35,6 +35,9 @@ void printMenu() {
 		<< "7. Загрузить" << endl
 		<< "8. Удалить" << endl
 		<< "9. Фильтр" << endl
+		<< "10. Заменить основу на фильтр (труба)" << endl
+		<< "11. Заменить основу на фильтр (КС)" << endl
+		<< "12. Сеть" << endl
 		<< "0. Выход" << endl << endl;
 }
 // Создание трубы
@@ -109,17 +112,21 @@ void editPipe(vector <Pipe> & P) {
 		cin >> i;
 		m = (int)i;
 	} while (cin.fail() || m < 0);
-
+	int schet = 0;
 	for (int key = 0; key < P.size(); key++) {
 		if (P[key].id == m) {
 			if (P[key].repear) {
 				P[key].repear = false;
+				schet++;
 			}
 			else {
 				P[key].repear = true;
+				schet++;
 			}
 		}
-		else
+	}
+	if (schet == 0) 
+	{
 		{
 			cout << "id не найден" << endl;
 		}
@@ -473,7 +480,29 @@ vector <KS> ksFilterName(const vector <KS>& KS1, string Name) {
 	}
 	return NameV;
 }
+//Поиск порядкого номера
 
+int findNomerPipe(const vector<Pipe>& Pipe, size_t id) {
+	int num = -1;
+	for (int i = 0; i <= Pipe.size(); i++) {
+		if (Pipe[i].id == id) {
+			num = i;
+			break;
+		}
+	}
+	return num;
+}
+
+int findNomerKS(const vector<KS>& KS, size_t id) {
+	int num = -1;
+	for (int i = 0; i <= KS.size(); i++) {
+		if (KS[i].id == id) {
+			num = i;
+			break;
+		}
+	}
+	return num;
+}
 
 
 int main()
@@ -487,7 +516,21 @@ int main()
 	vector <Pipe> filterPipe;
 	vector <KS> filterKSEffect;
 	vector <KS> filterKSName;
-
+	vector <KS> filterKS;
+	const int maxPipe = 100;
+	const int maxKS = 100;
+	int dataInsident[maxKS][maxPipe];
+	int dataSmej[maxKS][maxKS];
+	for (int i = 0; i < maxKS; i++) {
+		for (int j = 0; j < maxPipe; j++) {
+			dataInsident[i][j] = 0;
+		}
+	}
+	for (int i = 0; i < maxKS; i++) {
+		for (int j = 0; j < maxKS; j++) {
+			dataSmej[i][j] = 0;
+		}
+	}
 	while (true) {
 
 		// Определение максимальных id
@@ -563,6 +606,31 @@ int main()
 			savePipe(Pipes, fileName);
 			saveMaxKSId(maxIdKS, fileName);
 			saveKS(KSs, fileName);
+			//сохранить матрицу
+
+			ofstream fout;
+			fout.open(fileName + "Insident" + ".txt", ios::out);
+			if (fout.is_open())
+			{
+				for (int j = 0; j < KSs.size(); j++)
+				{
+					for (int i = 0; i < Pipes.size(); i++) {
+						fout << dataInsident[j][i] << endl;
+					}
+				}
+				fout.close();
+			}
+			fout.open(fileName + "Smej" + ".txt", ios::out);
+			if (fout.is_open())
+			{
+				for (int j = 0; j < KSs.size(); j++)
+				{
+					for (int i = 0; i < KSs.size(); i++) {
+						fout << dataSmej[j][i] << endl;
+					}
+				}
+				fout.close();
+			}
 			break;
 		}
 		case 7:														// Загрузить из файла
@@ -575,47 +643,84 @@ int main()
 			Pipes = loadPipe(maxIdPipe, fileName);
 			maxIdKS = loadMaxKSID(fileName);
 			KSs = loadKS(maxIdKS, fileName);
+			ifstream fin;
+			fin.open(fileName + "Incident" + ".txt", ios::in);
+
+			if (fin.is_open()) {
+				for (int j = 0; j < KSs.size(); j++)
+				{
+					for (int i = 0; i < Pipes.size(); i++) {
+						fin >> dataInsident[j][i];
+					}
+				}
+				fin.close();
+			}
+
+			fin.open(fileName + "Smej" + ".txt", ios::in);
+
+			if (fin.is_open()) {
+				for (int j = 0; j < KSs.size(); j++)
+				{
+					for (int i = 0; i < KSs.size(); i++) {
+						fin >> dataSmej[j][i];
+					}
+				}
+				fin.close();
+			}
 			break;
 		}
 		case 8:														// Удалить Трубу или кс
 		{
 			bool check = true;
 			while (check) {
-				int keyDelete;
-				do {
-					cout << "1. Удалить трубу" << endl
-						<< "2. Удалить КС" << endl
-						<< "0. Назад" << endl;
-					cin.clear();
-					cin.ignore(10000, '\n');
-					cin >> keyDelete;
-				} while (cin.fail() || keyDelete < 0 || keyDelete > 2);
+				{
+					for (int i = 0; i <= KSs.size(); i++) {
+						for (int j = 0; j <= Pipes.size(); j++) {
+							dataInsident[i][j] = 0;
+						}
+					}
+					for (int i = 0; i <= KSs.size(); i++) {
+						for (int j = 0; j <= KSs.size(); j++) {
+							dataSmej[i][j] = 0;
+						}
+					}
+					bool check = true;
+					while (check) {
+						int keyDelete;
+						do {
+							cout << "1. Удалить трубу" << endl
+								<< "2. Удалить КС" << endl
+								<< "0. Назад" << endl;
+							cin.clear();
+							cin.ignore(10000, '\n');
+							cin >> keyDelete;
+						} while (cin.fail() || keyDelete < 0 || keyDelete > 2);
 
-				switch (keyDelete)
-				{
-				case 1:
-				{
-					deletePipe(Pipes);
-					break;
-				}
+						switch (keyDelete)
+						{
+						case 1:
+						{
+							deletePipe(Pipes);
+							break;
+						}
 
-				case 2:
-				{
-					deleteKS(KSs);
+						case 2:
+						{
+							deleteKS(KSs);
+							break;
+						}
+						case 0:
+						{
+							check = false;
+							break;
+						}
+						default:
+							cout << "Ошибка" << endl;
+							break;
+						}
+					}
 					break;
 				}
-				case 0:
-				{
-					check = false;
-					break;
-				}
-				default:
-					cout << "Ошибка" << endl;
-					break;
-				}
-			}
-			break;
-		}
 		case 9:														// Фильтры
 		{
 			int keyFilter;
@@ -667,6 +772,7 @@ int main()
 						for (int i = 0; i < filterKSName.size(); i++) {
 							printKS(filterKSName[i]);
 						}
+						filterKS = filterKSName;
 					}
 
 
@@ -711,6 +817,7 @@ int main()
 						for (int i = 0; i < filterKSEffect.size(); i++) {
 							printKS(filterKSEffect[i]);
 						}
+
 						break;
 					}
 
@@ -728,23 +835,216 @@ int main()
 
 
 				break;
-			}
-			default:
-				cout << "Ошибка";
+			}case 10:
+			{
+				Pipes = filterPipe;
 				break;
 			}
-			break;
-		}
-		case 0:
-		{
-			return 0;
-		}
-		default:
-		{
-			cout << "Ошибка" << endl;
-		}
+			case 11:
+			{
+				KSs = filterKS;
+				break;
+			}
+			case 12:
+			{
+				bool check1 = true;
+				while (check1) {
+					int grafKey;
+					do {
+						cout << "1. Удалить сеть" << endl;
+						cout << "2. Добавить соединение" << endl;
+						cout << "3. Показать" << endl;
+						cout << "4. Топологическая сортировка" << endl;
+						cout << "0. Выход" << endl;
+						cin.clear();
+						cin.ignore(10000, '\n');
+						double idP;
+						cin >> idP;
+						grafKey = (int)idP;
+					} while (cin.fail() || grafKey < 0 || grafKey>4);
+					switch (grafKey)
+					{
+					case 1:
+					{
+						for (int i = 0; i < KSs.size(); i++) {
+							for (int j = 0; j < Pipes.size(); j++) {
+								dataInsident[i][j] = 0;
+							}
+						}
+						for (int i = 0; i < KSs.size(); i++) {
+							for (int j = 0; j < KSs.size(); j++) {
+								dataSmej[i][j] = 0;
+							}
+						}
+						break;
+					}
+					case 2:
+					{
 
+						double idK1;
+						int idKS1;
+						do {
+							cout << "Введите id начальной КС" << endl;
+							cin.clear();
+							cin.ignore(10000, '\n');
+							cin >> idK1;
+							idKS1 = (int)idK1;
+						} while (cin.fail() || idKS1 < 0 || idKS1 > maxIdKS - 1);
+						int start = findNomerKS(KSs, idKS1);
+
+						double idK2;
+						int idKS2;
+						do {
+							cout << "Введите id конечной КС" << endl;
+							cin.clear();
+							cin.ignore(10000, '\n');
+							cin >> idK2;
+							idKS2 = (int)idK2;
+						} while (cin.fail() || idKS2 < 0 || idKS2 > maxIdKS - 1);
+
+
+						int finish = findNomerKS(KSs, idKS2);
+						if (start == -1 || finish == -1) {
+							cout << "Id не найдены" << endl;
+							break;
+						}
+
+						double idPipe;
+						int idP;
+						do {
+							cout << "Введите id Трубы" << endl;
+							cin.clear();
+							cin.ignore(10000, '\n');
+							cin >> idPipe;
+							idP = (int)idPipe;
+						} while (cin.fail() || idP < 0 || idP > maxIdPipe - 1);
+
+
+						int rebro = findNomerPipe(Pipes, idP);
+						if (rebro == -1) {
+							cout << "Id не найдены" << endl;
+							break;
+						}
+
+						for (int j = 0; j < Pipes.size(); j++) {
+							if (dataInsident[j][rebro] != 0) {
+								cout << "Это ребро уже было использованно" << endl;
+								break;
+							}
+						}
+
+						dataSmej[idKS1][idKS2] = 1;
+						dataInsident[idKS1][rebro] = 1;
+						dataInsident[idKS2][rebro] = -1;
+
+						break;
+					}
+
+					case 3:
+					{
+						cout << "Матрица инцидентности" << endl;
+						for (int i = 0; i < KSs.size(); i++) {
+							for (int j = 0; j < Pipes.size(); j++) {
+								cout << dataInsident[i][j] << "  ";
+							}
+							cout << endl;
+						}
+						cout << endl <<
+							"Матрица смежности" << endl;
+
+						for (int i = 0; i < KSs.size(); i++) {
+							for (int j = 0; j < KSs.size(); j++) {
+								cout << dataSmej[i][j] << "  ";
+							}
+							cout << endl;
+						}
+						cout << endl;
+
+						break;
+					}
+
+					case 4:
+					{
+						vector <int> sort;
+						int startingPoint = 1;
+						vector <int> used;
+
+						for (int i = 0; i < KSs.size(); i++) {
+							int count = 0;
+							int countminus = 0;
+							for (int j = 0; j < Pipes.size(); j++) {
+								if (dataInsident[i][j] == 1) {
+									count++;
+
+								}
+								if (dataInsident[i][j] == -1) {
+									countminus++;
+
+								}
+
+
+							}
+							if (count == 0 && countminus != 0) {
+								startingPoint = i;
+								sort.push_back(startingPoint);
+								break;
+
+							}
+						}
+
+						while (true) {
+							int count = 0;
+							for (int i = 0; i < KSs.size(); i++) {
+								if (dataSmej[i][startingPoint] == 1) {
+									startingPoint = i;
+									sort.insert(sort.begin(), startingPoint);
+									count++;
+									break;
+								}
+
+							}
+							if (count == 0) {
+								break;
+							}
+						}
+
+						for (int i = 0; i < sort.size(); i++) {
+							cout << KSs[sort[i]].id << "  ";
+						}
+						cout << endl;
+
+
+						break;
+					}
+
+					case 0:
+					{
+						check1 = false;
+						break;
+					}
+
+
+					default:
+						cout << "error" << endl;
+						break;
+					}
+				}
+
+				break;
+			}
+			case 0:
+			{
+
+				return 0;
+			}
+			default:
+			{
+				cout << "Ошибка" << endl;
+				break;
+			}
+			}
+		}
+			}}
 		}
 	}
-
 }
