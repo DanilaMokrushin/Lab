@@ -5,6 +5,7 @@
 #include <fstream>
 #include <Windows.h> // Нужно для распознания кирилицы 
 #include <vector>
+#include <string>
 using namespace std;
 // Структура трубы
 struct Pipe
